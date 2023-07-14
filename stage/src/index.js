@@ -4,9 +4,9 @@ const { isSupported } = require('twilio-video');
 
 const { isMobile } = require('./browser');
 const joinRoom = require('./joinroom');
-const micLevel = require('./miclevel');
+// const micLevel = require('./miclevel');
 const selectMedia = require('./selectmedia');
-const selectRoom = require('./selectroom');
+// const selectRoom = require('./selectroom');
 const showError = require('./showerror');
 
 const $modals = $('#modals');
@@ -70,15 +70,8 @@ const deviceIds = {
  * @param [error=null] - Error from the previous Room session, if any
  */
 async function selectAndJoinRoom(error = null) {
-  const formData = await selectRoom($joinRoomModal, error);
-  if (!formData) {
-    // User wants to change the camera and microphone.
-    // So, show them the microphone selection modal.
-    deviceIds.audio = null;
-    deviceIds.video = null;
-    return selectMicrophone();
-  }
-  const { identity, roomName } = formData;
+  const identity = 'stage';
+  const roomName = 'lego';
 
   try {
     // Fetch an AccessToken to join the Room.
@@ -88,13 +81,13 @@ async function selectAndJoinRoom(error = null) {
     const token = await response.text();
 
     // Add the specified audio device ID to ConnectOptions.
-    connectOptions.audio = { deviceId: { exact: deviceIds.audio } };
+    // connectOptions.audio = { deviceId: { exact: deviceIds.audio } };
 
     // Add the specified Room name to ConnectOptions.
     connectOptions.name = roomName;
 
     // Add the specified video device ID to ConnectOptions.
-    connectOptions.video.deviceId = { exact: deviceIds.video };
+    // connectOptions.video.deviceId = { exact: deviceIds.video };
 
     // Join the Room.
     await joinRoom(token, connectOptions);
@@ -124,27 +117,8 @@ async function selectCamera() {
   return selectAndJoinRoom();
 }
 
-/**
- * Select your microphone.
- */
-async function selectMicrophone() {
-  if (deviceIds.audio === null) {
-    try {
-      deviceIds.audio = await selectMedia('audio', $selectMicModal, audioTrack => {
-        const $levelIndicator = $('svg rect', $selectMicModal);
-        const maxLevel = Number($levelIndicator.attr('height'));
-        micLevel(audioTrack, maxLevel, level => $levelIndicator.attr('y', maxLevel - level));
-      });
-    } catch (error) {
-      showError($showErrorModal, error);
-      return;
-    }
-  }
-  return selectCamera();
-}
-
 // If the current browser is not supported by twilio-video.js, show an error
 // message. Otherwise, start the application.
-window.addEventListener('load', isSupported ? selectMicrophone : () => {
+window.addEventListener('load', isSupported ? selectAndJoinRoom : () => {
   showError($showErrorModal, new Error('This browser is not supported.'));
 });
